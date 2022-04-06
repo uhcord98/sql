@@ -1,0 +1,77 @@
+/* Create table about the people and what they do here */
+
+CREATE TABLE movie_stars (ID INTEGER PRIMARY KEY AUTOINCREMENT, first_name TEXT, last_name TEXT, dob_year NUMERIC, birth_state TEXT);
+
+CREATE TABLE marriages (ID INTEGER PRIMARY KEY AUTOINCREMENT, marriage_year NUMERIC, person1_id NUMERIC, person2_id NUMERIC);
+
+CREATE TABLE movies (ID INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, year_released INTEGER, movie_star1 INTEGER, imdb_score NUMERIC);
+
+INSERT into movie_stars (first_name, last_name,dob_year,birth_state)
+VALUES ("Tom", "Hanks", 1956,"CA");
+INSERT into movie_stars (first_name, last_name,dob_year,birth_state)
+VALUES ("Rita", "Wilson",1956,"CA");
+INSERT into movie_stars (first_name, last_name,dob_year,birth_state)
+VALUES ("Goldie", "Hawn",1945,"D.C.");
+INSERT into movie_stars (first_name, last_name,dob_year,birth_state)
+VALUES ("Kurt", "Russell",1951,"MA");
+
+INSERT into marriages (marriage_year, person1_id, person2_id)
+VALUES (1998, 1,2);
+INSERT into marriages (marriage_year, person1_id, person2_id)
+VALUES (1983,3,4);
+
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Toy Story 4",2019,1,7.7);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Cast Away",2000,1,7.8);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Saving Mr.Banks",2013,1,7.5);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("The Terminal",2004,1,7.4);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Old Dogs",2009,2,5.3);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Jingle All the Way",1996,2,5.7);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Kimi",2022,2,6.3);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Boy Genius",2019,2,4.9);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Snatched",2017,3,4.6);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Private Benjamin",1980,3,6.2);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Overboard",1987,3,6.9);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("The First Wives Club",1996,3,6.4);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Guardians of the Galaxy 2",2017,4,7.6);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Tombstone",1993,4,7.8);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Captain Ron",1992,4,5.8);
+INSERT into movies (title, year_released, movie_star1,imdb_score)
+VALUES ("Tango & Cash",1989,4,6.4);
+
+/*JOIN Movie Stars to Movies to see average IMDB score by actor */
+
+SELECT movie_stars.first_name, movie_stars.last_name, avg(ROUND(movies.imdb_score)) as "Avg_IMDB_Score" from movie_stars
+JOIN movies
+ON movie_stars.id = movie_star1
+GROUP BY movie_stars.last_name;
+
+/*JOIN Movie Stars to Movies to see movie info */
+
+SELECT first_name, last_name, movies.title, movies.year_released FROM movie_stars
+JOIN movies
+ON movie_stars.id =  movies.movie_star1
+ORDER BY movies.year_released;
+
+/*JOIN Movie Stars to Marriages to see marriage info */
+
+SELECT a.first_name, a.last_name,b.first_name,b.last_name,marriage_year FROM marriages
+JOIN movie_stars a
+ON marriages.person1_id = a.id
+JOIN movie_stars b
+ON marriages.person2_id = b.id;
+
