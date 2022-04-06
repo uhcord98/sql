@@ -1,0 +1,18 @@
+CREATE TABLE store (id INTEGER PRIMARY KEY,item TEXT, retail_price INTEGER, cost INTEGER,quantity_sold INTEGER);
+INSERT INTO store VALUES (1,"Monopoly",29.99,12.99,12);
+INSERT INTO store VALUES (2,"Sorry",19.99,7.99,3);
+INSERT INTO store VALUES (3,"Trouble",14.99,6.99,5);
+INSERT INTO store VALUES (4,"Twister",9.99,4.99,7);
+INSERT INTO store VALUES (5,"Bingo",12.99,3.57,17);
+INSERT INTO store VALUES (6,"Uno",4.99,0.99,7);
+INSERT INTO store VALUES (7,"Dos",4.99,1.12,3);
+INSERT INTO store VALUES (8,"Ticket to Ride",39.99,21.44,4);
+INSERT INTO store VALUES (9,"Candy Land",9.99,3.55,18);
+INSERT INTO store VALUES (10,"Apples to Apples",14.99,4.99,6);
+INSERT INTO store VALUES (11,"Checkers",9.99,0.59,12);
+INSERT INTO store VALUES (12,"Jenga",9.99,6.77,9);
+INSERT INTO store VALUES (13,"Zingo!",9.99,5.99,15);
+INSERT INTO store VALUES (14,"Scrabble",14.99,5.66,3);
+INSERT INTO store VALUES (15,"Yahtzee",9.99,3.44,5);
+
+SELECT item, quantity_sold, retail_price, cost, ROUND((retail_price-cost)*quantity_sold,2)as Net_Profit FROM store ORDER BY Net_Profit DESC
