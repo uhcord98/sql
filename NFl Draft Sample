@@ -1,0 +1,38 @@
+/*Sample data from kaggle.com*/
+/*Fastest players drafted with a minimum height of 72 inches and ordered by 40 yard dash time*/ 
+
+SELECT  
+        "Full Name" as Name,
+        school as College, 
+        drafted as Drafted, 
+        position_mod as Position,
+        avg(sprint_40yd) as "40_Time",
+        HeightIn as Height
+FROM nfldraft
+WHERE 
+    drafted = "Yes"
+AND
+    HeightIn >= "72"
+AND
+    sprint_40yd >= "4.00"
+GROUP BY
+    Name
+ORDER BY
+    "40_Time";
+    
+
+/*What team averages the highest pick in the 1st round*/
+
+SELECT
+        "Team Drafted" as Team,
+        ROUND(avg("Overall Pick Mod"),1) AS "Overall Pick Avg",
+        COUNT("drafted") AS "Number of 1st Round Picks"
+FROM nfldraft
+WHERE
+    drafted = "Yes"
+AND
+    "round drafted mod" = "1"
+GROUP BY
+    "Team Drafted"
+ORDER BY
+    "Overall Pick Avg";
