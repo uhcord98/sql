@@ -1,3 +1,5 @@
+/*Teredata*/
+
 SELECT
 CASE ACD_AREA_NM
 WHEN 'Enterprise Queue' THEN 'Internal'
