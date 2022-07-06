@@ -1,0 +1,254 @@
+SELECT *
+FROM NFL.dbo.NFL
+
+
+
+---ADD A COLUMN AND CONVERT TO PRIMARY KEY FOR TABLE WITHOUT A PRIMARY KEY 
+
+
+
+ALTER TABLE dbo.NFL 
+ADD RowId INT IDENTITY(1,1)
+GO
+
+ALTER TABLE dbo.NFL 
+ADD CONSTRAINT PK_NFL
+PRIMARY KEY CLUSTERED (RowId)
+GO
+
+
+
+-----DATA CLEANSING SECTION-----
+
+
+
+---PLAYER NAME IS CURRENTLY LISTED AS FIRST NAME LAST NAME\USERNAME. WILL SPLIT INTO 2 COLUMNS RETAINING ORIGINAL COLUMN---
+
+
+
+SELECT
+PARSENAME(REPLACE(Player, '\', '.'), 2),
+PARSENAME(REPLACE(Player, '\', '.'), 1)
+FROM NFL.dbo.NFL
+
+ALTER TABLE dbo.NFL
+ADD FullName NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET FullName = PARSENAME(REPLACE(Player, '\', '.'), 2)
+
+ALTER TABLE dbo.NFL
+ADD UserName NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET UserName = PARSENAME(REPLACE(Player, '\', '.'), 1)
+
+
+
+---Drafted Team / Round / Pick / Year are all combined into one column. ---
+---Leaving original column intact while creating 4 new columns to seperate the values---
+
+
+
+SELECT
+PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 4),
+PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 3),
+PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 2),
+PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 1)
+FROM NFL.dbo.NFL
+
+ALTER TABLE dbo.NFL
+ADD Mod_TeamDrafted NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET Mod_TeamDrafted = PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 4)
+
+ALTER TABLE dbo.NFL
+ADD Mod_RoundDrafted NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET Mod_RoundDrafted = PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 3)
+
+ALTER TABLE dbo.NFL
+ADD Mod_OverallDrafted NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET Mod_OverallDrafted = PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 2)
+
+ALTER TABLE dbo.NFL
+ADD Mod_YearDrafted NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET Mod_YearDrafted = PARSENAME(REPLACE([Drafted  tm rnd yr ], '/', '.'), 1)
+
+
+
+---CONVERT ORDINAL NUMBERS TO NUMBERS SO THAT QUERIES CAN HAVE MATHMATICAL FUNCTIONS---
+---KEEPING RAW COLUMNS INTACT---
+
+
+
+SELECT TRIM(TRANSLATE(Mod_OverallDrafted, 'abcdefghijklmnopquerstuvwxyz', '                            ')) as Mod_OverallDraftedNumerical,
+TRIM(TRANSLATE(Mod_RoundDrafted, 'abcdefghijklmnopquerstuvwxyz', '                            ')) as Mod_RoundDraftedNumerical
+FROM NFL.dbo.NFL
+
+ALTER TABLE dbo.NFL
+ADD Mod_OverallDraftedNumerical NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET Mod_OverallDraftedNumerical = TRIM(TRANSLATE(Mod_OverallDrafted, 'abcdefghijklmnopquerstuvwxyz', '                            '))
+
+ALTER TABLE dbo.NFL
+ADD Mod_RoundDraftedNumerical NVARCHAR(255);
+
+UPDATE dbo.NFL
+SET Mod_RoundDraftedNumerical = TRIM(TRANSLATE(Mod_RoundDrafted, 'abcdefghijklmnopquerstuvwxyz', '                            '))
+
+
+---CHANGE COLUMN POSITION_TYPE backs_receives for COLUMN POISTION WHERE = QB TO new data POSITION TYPE = quarterbacks ---
+
+UPDATE dbo.NFL
+SET POSITION_TYPE = 'quarterback'
+WHERE POSITION = 'QB'
+
+
+/*SEE WHAT POSITION IS DRAFTED AT THE LOWEST OVERALL PICK*/ 
+
+SELECT Position, AVG(CAST(Mod_OverallDraftedNumerical AS INT)) AS  Avg_Drafted
+FROM DBO.NFL
+GROUP BY Position
+ORDER BY Avg_Drafted
+
+/*	NOTICED DB, CB, FS, SS MAY BE ABLE TO BE CONSOLIDATED - SEEING HOW MANY AT EACH POSITION	*/
+
+SELECT POSITION, COUNT(RowId)
+FROM DBO.NFL
+WHERE Position IN ('DB','CB','FS','SS','S')
+GROUP BY Position;
+
+/*	ADD NEW COLUMN TO CORRECT TWO DB INTO CB AND MIGRATE FS,SS INTO S	*/
+
+ALTER TABLE dbo.NFL
+ADD Mod_Position NVARCHAR(255);
+
+/* MIRROR POSITION COLUMN TO MOD_POSITION	*/
+
+UPDATE dbo.NFL
+SET Mod_Position = Position
+
+/*	MODIFY MOD_POSITION COLUMN TO CORRECT THE DB > CB AND FS,SS > S	*/
+
+UPDATE dbo.NFL
+SET Mod_Position = 'CB'
+WHERE Position = 'db';
+
+UPDATE dbo.NFL
+SET Mod_Position = 'S'
+WHERE Position = 'FS' 
+OR
+Position = 'SS'
+
+/*	QUERY TO TEST MODIFICATION TO NEW COLUMN	*/
+
+SELECT RowId, Position, Mod_Position, Position_Type
+FROM DBO.NFL
+WHERE Position_Type = 'defensive_back'
+
+/*	RE-TEST AVERAGE DRAFT POSITON	*/
+
+SELECT Mod_Position, AVG(CAST(Mod_OverallDraftedNumerical AS INT)) AS  Avg_Drafted
+FROM DBO.NFL
+GROUP BY Mod_Position
+ORDER BY Avg_Drafted;
+
+/* RESULT OF QUERY FOR AVERAGE DRAFT POSITOIN
+
+DE	104
+OT	104
+QB	105
+CB	107
+DT	108
+OLB	112
+C	114
+WR	116
+S	119
+OG	122
+RB	125
+TE	127
+ILB	127
+P	166
+K	167
+FB	181
+LS	196
+
+*/ 
+
+
+/*	WHICH TEAMS AVERAGE THE HIGHEST DRAFT POSITION	*/
+
+SELECT Mod_TeamDrafted, AVG(CAST(Mod_OverallDraftedNumerical AS INT)) AS  Avg_Drafted
+FROM DBO.NFL
+WHERE Mod_TeamDrafted IS NOT NULL
+AND Mod_RoundDraftedNumerical = '1'
+GROUP BY Mod_TeamDrafted
+ORDER BY Avg_Drafted 
+
+/*	33 TEAMS SHOWN DUE TO CHARGERS IN SAN DIEGO & LOS ANGELES - MODIFY SAN DIEGO TO LOS ANGELES SINCE MODIFIED COLUMN AND
+	ORIGINAL COLUMN STILL EXISTS	
+	
+Los Angeles Rams 		1
+Jacksonville Jaguars 	8
+Washington Redskins 	11
+Tampa Bay Buccaneers 	12
+Tennessee Titans 		12
+Kansas City Chiefs 		12
+Los Angeles Chargers 	12
+Buffalo Bills 			13
+Chicago Bears 			13
+Cleveland Browns 		13
+New York Jets 			14
+Oakland Raiders 		14
+San Diego Chargers 		14
+Philadelphia Eagles 	15
+Miami Dolphins 			15
+Detroit Lions			15
+Houston Texans			16
+Arizona Cardinals		16
+San Francisco 49ers 	16
+Seattle Seahawks 		17
+New York Giants 		17
+Carolina Panthers 		17
+Cincinnati Bengals 		17
+Dallas Cowboys 			18
+Atlanta Falcons 		18
+Denver Broncos			19
+Indianapolis Colts	 	19
+Minnesota Vikings 		20
+New Orleans Saints		20
+Baltimore Ravens 		22
+Green Bay Packers 		23
+Pittsburgh Steelers 	24
+New England Patriots 	26
+
+*/
+
+
+UPDATE dbo.NFL
+SET Mod_TeamDrafted = 'Los Angeles Chargers'
+WHERE Mod_TeamDrafted = 'San Diego Chargers'
+
+
+/*	RE-TEST QUERY AFTER MODIFICATION	*/
+
+SELECT Mod_TeamDrafted, AVG(CAST(Mod_OverallDraftedNumerical AS INT)) AS  Avg_Drafted
+FROM DBO.NFL
+WHERE Mod_TeamDrafted IS NOT NULL
+AND Mod_RoundDraftedNumerical = '1'
+GROUP BY Mod_TeamDrafted
+ORDER BY Avg_Drafted; 
+
+SELECT *
+FROM DBO.NFL
+WHERE Mod_TeamDrafted = 'Los Angeles Rams'
+AND
+Mod_RoundDraftedNumerical = '1'
